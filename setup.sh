@@ -156,9 +156,148 @@ PYEOF
 
 success "Hooks configured in $SETTINGS_FILE"
 
-# --- 4. ClickUp API token ---
+# --- 4. Permissions ---
 
-header "4. ClickUp API token"
+header "4. Permissions"
+
+# Merge role-specific permissions into global and workspace settings.
+# Each role can provide a permissions.json with "global" and "workspace" sections.
+
+merge_permissions() {
+    python3 - "$@" <<'PYEOF'
+import json, sys, os
+
+settings_file = sys.argv[1]
+permissions_file = sys.argv[2]
+section = sys.argv[3]  # "global" or "workspace"
+
+# Read the permissions template
+with open(permissions_file) as f:
+    template = json.load(f)
+
+if section not in template:
+    sys.exit(0)
+
+new_allows = template[section].get("permissions", {}).get("allow", [])
+if not new_allows:
+    sys.exit(0)
+
+# Read or create the target settings file
+if os.path.exists(settings_file):
+    with open(settings_file) as f:
+        try:
+            settings = json.load(f)
+        except json.JSONDecodeError:
+            settings = {}
+else:
+    settings = {}
+
+# Merge permissions — add new entries, don't duplicate
+perms = settings.setdefault("permissions", {})
+existing = set(perms.get("allow", []))
+merged = list(perms.get("allow", []))
+
+added = 0
+for entry in new_allows:
+    if entry not in existing:
+        merged.append(entry)
+        existing.add(entry)
+        added += 1
+
+perms["allow"] = merged
+
+with open(settings_file, "w") as f:
+    json.dump(settings, f, indent=2)
+
+print(f"  {added} new permissions added ({len(merged)} total)")
+PYEOF
+}
+
+# Merge global permissions into ~/.claude/settings.json
+for role in "${ROLES[@]}"; do
+    perm_file="$REPO_DIR/$role/permissions.json"
+    if [ -f "$perm_file" ]; then
+        info "Merging $role global permissions into $SETTINGS_FILE"
+        merge_permissions "$SETTINGS_FILE" "$perm_file" "global"
+        success "  Global permissions updated ($role)"
+    fi
+done
+
+# --- 5. Workspace setup ---
+
+header "5. Workspace setup"
+
+echo "  Claude Code works best when launched from a workspace root directory"
+echo "  that contains all your Measure repos as sibling directories."
+echo ""
+echo "  This step installs:"
+echo "    - <workspace>/.claude/settings.local.json  (pre-approved permissions)"
+echo "    - <workspace>/CLAUDE.md  (workspace context for Claude)"
+echo ""
+
+# Try to detect workspace directory
+DEFAULT_WORKSPACE=""
+if [ -d "$HOME/Projects/measure-docker" ]; then
+    DEFAULT_WORKSPACE="$HOME/Projects"
+elif [ -d "$HOME/projects/measure-docker" ]; then
+    DEFAULT_WORKSPACE="$HOME/projects"
+elif [ -d "$HOME/measure/measure-docker" ]; then
+    DEFAULT_WORKSPACE="$HOME/measure"
+fi
+
+if [ -n "$DEFAULT_WORKSPACE" ]; then
+    read -r -p "  Workspace directory [$DEFAULT_WORKSPACE]: " WORKSPACE_DIR
+    WORKSPACE_DIR="${WORKSPACE_DIR:-$DEFAULT_WORKSPACE}"
+else
+    read -r -p "  Workspace directory (e.g. ~/Projects): " WORKSPACE_DIR
+fi
+
+# Expand ~ if present
+WORKSPACE_DIR="${WORKSPACE_DIR/#\~/$HOME}"
+
+if [ -z "$WORKSPACE_DIR" ]; then
+    warn "Skipped workspace setup. You can re-run setup.sh later to configure it."
+elif [ ! -d "$WORKSPACE_DIR" ]; then
+    warn "Directory not found: $WORKSPACE_DIR — skipping workspace setup."
+else
+    # Install workspace permissions
+    WORKSPACE_CLAUDE_DIR="$WORKSPACE_DIR/.claude"
+    WORKSPACE_SETTINGS="$WORKSPACE_CLAUDE_DIR/settings.local.json"
+    mkdir -p "$WORKSPACE_CLAUDE_DIR"
+
+    for role in "${ROLES[@]}"; do
+        perm_file="$REPO_DIR/$role/permissions.json"
+        if [ -f "$perm_file" ]; then
+            info "Merging $role workspace permissions into $WORKSPACE_SETTINGS"
+            merge_permissions "$WORKSPACE_SETTINGS" "$perm_file" "workspace"
+            success "  Workspace permissions updated ($role)"
+        fi
+    done
+
+    # Install workspace CLAUDE.md
+    WORKSPACE_CLAUDE_MD="$WORKSPACE_DIR/CLAUDE.md"
+    WORKSPACE_TEMPLATE="$REPO_DIR/shared/claude-md-workspace.md"
+
+    if [ ! -f "$WORKSPACE_CLAUDE_MD" ]; then
+        if [ -f "$WORKSPACE_TEMPLATE" ]; then
+            cp "$WORKSPACE_TEMPLATE" "$WORKSPACE_CLAUDE_MD"
+            success "Created $WORKSPACE_CLAUDE_MD from template"
+            warn "Open it and customize the repo table for your setup."
+        fi
+    else
+        info "$WORKSPACE_CLAUDE_MD already exists — not overwriting"
+        if ! grep -q "measure-ai-tools/shared/claude-md-global" "$WORKSPACE_CLAUDE_MD"; then
+            warn "Your workspace CLAUDE.md doesn't include shared context. Consider adding:"
+            warn "  @$REPO_DIR/shared/claude-md-global.md"
+        fi
+    fi
+
+    success "Workspace configured at $WORKSPACE_DIR"
+fi
+
+# --- 6. ClickUp API token ---
+
+header "6. ClickUp API token"
 
 if [ -n "${CLICKUP_API_TOKEN:-}" ]; then
     success "CLICKUP_API_TOKEN already set"
@@ -186,9 +325,9 @@ else
     fi
 fi
 
-# --- 5. Personal CLAUDE.md ---
+# --- 7. Personal CLAUDE.md ---
 
-header "5. Personal CLAUDE.md"
+header "7. Personal CLAUDE.md"
 
 GLOBAL_CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
 
@@ -230,6 +369,16 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 success "Setup complete for: ${ROLES[*]}"
 echo ""
+echo "What was configured:"
+echo "  - Slash commands symlinked to ~/.claude/commands/"
+echo "  - ClickUp CLI installed to ~/.local/bin/clickup"
+echo "  - Protect-main hook in ~/.claude/settings.json"
+echo "  - Permissions merged into ~/.claude/settings.json"
+if [ -n "${WORKSPACE_DIR:-}" ] && [ -d "${WORKSPACE_DIR:-}" ]; then
+echo "  - Workspace permissions at $WORKSPACE_DIR/.claude/settings.local.json"
+echo "  - Workspace CLAUDE.md at $WORKSPACE_DIR/CLAUDE.md"
+fi
+echo ""
 echo "Available commands:"
 shopt -s nullglob
 for role in "${ROLES[@]}"; do
@@ -242,7 +391,12 @@ echo ""
 echo "Next steps:"
 echo "  1. Restart your terminal (or: source ~/.zshrc) to reload PATH"
 echo "  2. Edit ~/.claude/CLAUDE.md and fill in your personal sections"
+if [ -n "${WORKSPACE_DIR:-}" ] && [ -d "${WORKSPACE_DIR:-}" ]; then
+echo "  3. Review $WORKSPACE_DIR/CLAUDE.md and customize the repo table"
+echo "  4. Copy a repo template when starting in a new codebase:"
+else
 echo "  3. Copy a repo template when starting in a new codebase:"
+fi
 for role in "${ROLES[@]}"; do
     echo "       cp $REPO_DIR/$role/claude-md-repo.md <repo>/CLAUDE.md"
 done

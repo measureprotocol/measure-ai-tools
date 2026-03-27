@@ -9,13 +9,15 @@ measure-ai-tools/
 ├── setup.sh                         # Onboarding script — run this first
 ├── shared/
 │   ├── claude-md-global.md          # Template for ~/.claude/CLAUDE.md (personal global config)
+│   ├── claude-md-workspace.md       # Template for <workspace>/CLAUDE.md (multi-repo workspace)
 │   ├── hooks/
 │   │   └── protect-main.sh          # Blocks accidental pushes to main/master
 │   └── context/
-│       ├── measure-overview.md      # Company and product context for AI tools
+│       ├── measure-overview.md      # Company, product, and local dev environment context
 │       └── clickup-workspace.md     # ClickUp workspace structure and conventions
 ├── engineering/
 │   ├── claude-md-repo.md            # Template for <repo>/CLAUDE.md in engineering repos
+│   ├── permissions.json             # Curated Claude Code permissions for engineering
 │   └── commands/                    # Slash commands for Claude Code
 │       ├── start.md                 # /start — begin a feature branch
 │       ├── pr.md                    # /pr — submit work as a pull request
@@ -64,6 +66,8 @@ The script will:
 - Symlink slash commands for your role(s) into `~/.claude/commands/`
 - Install the ClickUp CLI to `~/.local/bin/`
 - Configure the protect-main hook in `~/.claude/settings.json`
+- Merge role-specific permissions into `~/.claude/settings.json` (global) and your workspace (local)
+- Set up your workspace directory with pre-approved permissions and a CLAUDE.md template
 - Create `~/.claude/CLAUDE.md` if it doesn't already exist
 - Prompt for your `CLICKUP_API_TOKEN`
 
@@ -108,6 +112,66 @@ This symlinks commands from all specified roles. For your `~/.claude/CLAUDE.md`,
 
 ---
 
+## Permissions and Docker-based workflow
+
+### Why pre-configured permissions matter
+
+Without pre-configured permissions, Claude Code prompts you for approval on every new type of action — running tests, checking logs, executing Docker commands, etc. Over time you accumulate hundreds of ad-hoc approvals in `settings.local.json`, different for every engineer.
+
+The `permissions.json` in each role directory provides a curated, intentional set of permissions that setup.sh installs in two places:
+
+| File | Scope | What it covers |
+|---|---|---|
+| `~/.claude/settings.json` | All projects | Git, Docker, build tools, package managers, shell utilities |
+| `<workspace>/.claude/settings.local.json` | Workspace only | Same as global + `./env.sh` commands, pnpm shortcuts, read-only AWS, ClickUp MCP tools |
+
+### What's allowed
+
+The engineering permissions cover:
+- **Docker** — `docker *`, `docker compose *`, `./env.sh *` — Claude can build, run, exec into containers, read logs, run migrations, and test freely inside Docker
+- **Git & GitHub** — all git and gh commands (with protect-main hook as safety net)
+- **Build tools** — npm, npx, pnpm, node, pip, python, pyenv, pytest, Django manage.py
+- **Shell utilities** — ls, cat, head, tail, grep, find, tree, diff, sort, etc.
+- **File operations** — mkdir, touch, cp, mv, chmod
+- **ClickUp** — CLI and MCP tools for task management
+
+### What's NOT allowed (requires manual approval)
+
+- `rm -rf`, `kill`, destructive file operations
+- SSH to remote servers
+- AWS write operations (only `sts get-caller-identity` and `amplify list-*` are pre-approved)
+- Direct database access outside Docker
+- Any command not in the allowlist — Claude will ask before running it
+
+### Multi-repo workspace setup
+
+We recommend a workspace structure where all repos are checked out as siblings under one parent directory:
+
+```
+~/Projects/                          # Workspace root — launch Claude Code from here
+├── .claude/settings.local.json      # Installed by setup.sh (curated permissions)
+├── CLAUDE.md                        # Installed by setup.sh (workspace context)
+├── measure-docker/                  # Docker Compose orchestration
+├── measure-backend/
+├── measure-studio/
+├── measure-requester/
+├── ...
+└── measure-ai-tools/
+```
+
+This structure lets Claude read across repos for cross-service work, and the workspace-level permissions apply to all repos underneath.
+
+### Customizing permissions
+
+The installed permissions are a starting point. You can:
+- **Add more** by approving new commands during Claude sessions (they save to `settings.local.json`)
+- **Add role-specific permissions** by creating `<role>/permissions.json` with the same `global`/`workspace` structure
+- **Override per-repo** by adding a `.claude/settings.local.json` in any specific repo
+
+To reset workspace permissions to the curated set, delete `<workspace>/.claude/settings.local.json` and re-run `./setup.sh`.
+
+---
+
 ## How updates propagate
 
 When this repo is updated, pull and most things apply automatically:
@@ -117,6 +181,7 @@ When this repo is updated, pull and most things apply automatically:
 | Slash commands | Auto — symlinked. `git pull` is enough. |
 | Hook scripts | Auto — referenced by path in the repo. |
 | `@include` sections in CLAUDE.md | Auto — live path references. `git pull` updates them. |
+| Permissions (`permissions.json`) | Manual — re-run `./setup.sh` to merge new permissions. Existing permissions are preserved. |
 | ClickUp CLI | Manual — re-run `./setup.sh` after significant updates. |
 | New template sections | Manual — check the changelog and update your personal files if relevant. |
 

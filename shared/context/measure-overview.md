@@ -47,9 +47,102 @@ Measure Protocol is a data and survey platform that connects brands and research
 
 **Mobile** — iOS (Swift, Xcode, CocoaPods).
 
+## Local development environment
+
+All services run locally via Docker Compose, orchestrated from the `measure-docker` repository. This is the standard way to develop and test — always prefer Docker over running services directly on the host.
+
+### measure-docker layout
+
+```
+measure-docker/
+├── docker-compose.yml    # All service definitions (profiles, healthchecks, networking)
+├── env.sh                # CLI management tool — primary interface for engineers
+├── dockerfiles/          # Per-service Dockerfiles
+└── scripts/              # Seed scripts, entrypoints, test data generators
+```
+
+### env.sh commands
+
+| Command | What it does |
+|---|---|
+| `./env.sh up` | Start all backend services (MySQL, Redis, Django apps) |
+| `./env.sh up studio requester` | Start specific service profiles only |
+| `./env.sh up all` | Start everything (all backends + all frontends) |
+| `./env.sh up celery` | Start with Celery workers and beat schedulers |
+| `./env.sh down` | Stop all containers |
+| `./env.sh build all` | Build/rebuild all Docker images |
+| `./env.sh seed` | Run migrations and load fixtures for all services |
+| `./env.sh seed <service>` | Seed a specific service only |
+| `./env.sh db <service>` | Open a MySQL shell for that service's database |
+| `./env.sh manage <service> <cmd>` | Run a Django management command in a container |
+| `./env.sh shell <service>` | Open a Django shell in a container |
+| `./env.sh logs <service>` | Tail logs for a service |
+| `./env.sh reset` | Nuclear option: tear down, rebuild, and reseed everything |
+
+### Service profiles and ports
+
+**Infrastructure** (always running):
+- MySQL 8.0 (port 3306), Redis 7 (port 6379), MongoDB 7 (port 27017), Neo4j 4.4 (port 7474)
+
+**Backend services** (Django):
+| Service | Port | Profile |
+|---|---|---|
+| requester | 8000 | requester |
+| contributor | 8001 | contributor |
+| sampler | 6003 | sampler |
+| workshop | 6007 | workshop |
+| backend | 6008 | backend |
+| taxonomy | 6002 | taxonomy |
+
+**Frontend services** (Next.js / React):
+| Service | Port | Profile |
+|---|---|---|
+| c2 | 3000 | c2 |
+| msr-web | 3001 | msr-web |
+| studio | 3006 | studio |
+| predict | 3009 | predict |
+| audience-tools | 4000 | audience-tools |
+
+### Running commands in Docker
+
+```bash
+# Run tests for a service
+docker compose exec <service> python manage.py test
+docker compose exec <service> pytest
+
+# Run a specific management command
+docker compose exec <service> python manage.py migrate
+docker compose exec <service> python manage.py createsuperuser
+
+# Check logs
+docker compose logs -f <service>
+
+# Open a shell inside a container
+docker compose exec <service> bash
+
+# For Next.js services
+docker compose exec <service> pnpm test
+docker compose exec <service> pnpm build
+```
+
+### Docker networking
+
+Services communicate using Docker service names as hostnames:
+- Database host: `mysql` (not localhost)
+- Redis host: `redis`
+- Inter-service: `contributor:8001`, `sampler:6003`, `requester:8000`, etc.
+
+Each Django service has a `settings/docker.py` that configures these Docker-internal hostnames.
+
+### Multi-repo workspace structure
+
+Engineers typically work from a single parent directory (e.g. `~/Projects/`) with all repos checked out as siblings. This allows Claude Code to read across repos when working on cross-service changes. The `measure-docker` directory sits alongside the service repos and mounts their source code via Docker volumes.
+
 ## Development conventions
 
 - Django migrations should always have descriptive names, not auto-generated ones
-- To run Django commands locally: `eval "$(pyenv init -)" && pyenv activate <env> && source conf/local.sh`
+- To run Django commands locally (outside Docker): `eval "$(pyenv init -)" && pyenv activate <env> && source conf/local.sh`
+- To run Django commands in Docker: `docker compose exec <service> python manage.py <command>` (from `measure-docker/`)
 - All documentation files use lowercase-with-dashes naming: `implementation-summary.md` not `IMPLEMENTATION_SUMMARY.md`
 - Feature branches use `feature_` prefix; no folder structure in branch names
+- Always use Docker for running and testing services locally — it ensures consistent environments and safe sandboxing

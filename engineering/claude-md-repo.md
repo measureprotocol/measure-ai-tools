@@ -21,33 +21,77 @@
      ...
      Key external dependencies, databases, queues, external services. -->
 
-## Local development setup
+## Docker setup
 
-<!-- How to get it running:
-     1. pyenv activate <env>
-     2. source conf/local.sh
-     3. python manage.py runserver
-     Any non-obvious setup steps. -->
+<!-- Fill in the Docker profile name and port for this service.
+     All services run via Docker Compose from the measure-docker repo. -->
+
+- **Docker profile**: <!-- e.g. requester, studio, sampler -->
+- **Container port**: <!-- e.g. 8000, 3006 -->
+- **Docker settings**: <!-- e.g. requester/settings/docker.py (for Django repos) -->
+
+```bash
+# Start this service (from measure-docker/):
+./env.sh up <profile>
+
+# Start with related services:
+./env.sh up <profile> <other-profile>
+
+# Rebuild after dependency changes:
+./env.sh build <profile>
+```
 
 ## Running tests
 
 ```bash
-# Fill in the test command for this repo
-pytest
-# or: python manage.py test
-# or: npm test
+# Via Docker (preferred — matches CI environment):
+docker compose exec <service> python manage.py test
+# or: docker compose exec <service> pytest
+# or: docker compose exec <service> pnpm test
+
+# Directly on host (if needed):
+# pytest
+# python manage.py test
+# pnpm test
 ```
 
 <!-- Any test conventions: where fixtures live, how to run a subset, etc. -->
 
 ## Database / migrations
 
-<!-- ORM used, how to run migrations, naming conventions.
+<!-- ORM used, database name(s), how to run migrations.
      For Django: always give migrations descriptive names. -->
+
+```bash
+# Run migrations via Docker:
+docker compose exec <service> python manage.py migrate
+
+# Open a database shell:
+./env.sh db <service>
+
+# Create a new migration:
+docker compose exec <service> python manage.py makemigrations <app> --name <descriptive_name>
+```
+
+## Logs and debugging
+
+```bash
+# Tail logs for this service:
+docker compose logs -f <service>
+
+# Open a shell inside the container:
+docker compose exec <service> bash
+
+# Open a Django shell:
+./env.sh shell <service>
+# or: docker compose exec <service> python manage.py shell
+```
 
 ## Key environment variables
 
-<!-- Variables an engineer needs to set to work in this repo. -->
+<!-- Variables an engineer needs to set to work in this repo.
+     Docker-specific env is configured in measure-docker/.env and docker-compose.yml.
+     Only list variables that engineers may need to override or be aware of. -->
 
 ## ClickUp
 

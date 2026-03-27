@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "_comment": "Curated Claude Code permissions for Measure engineering. Installed by setup.sh into ~/.claude/settings.json and <workspace>/.claude/settings.local.json. Designed for maximal safe autonomy in a Docker-based local dev environment.",
+  "global": {
+    "_comment": "Merged into ~/.claude/settings.json — applies everywhere.",
+    "permissions": {
+      "allow": [
+        "WebSearch",
+        "WebFetch",
+
+        "Bash(git *)",
+        "Bash(gh *)",
+
+        "Bash(docker *)",
+        "Bash(docker-compose *)",
+        "Bash(docker compose *)",
+
+        "Bash(npm *)",
+        "Bash(npx *)",
+        "Bash(node *)",
+        "Bash(pnpm *)",
+        "Bash(yarn *)",
+        "Bash(next *)",
+
+        "Bash(python *)",
+        "Bash(python3 *)",
+        "Bash(pip *)",
+        "Bash(pip3 *)",
+        "Bash(pyenv *)",
+        "Bash(pytest *)",
+        "Bash(* manage.py *)",
+
+        "Bash(source *)",
+        "Bash(eval *)",
+        "Bash(export *)",
+        "Bash(cd *)",
+
+        "Bash(ls *)",
+        "Bash(cat *)",
+        "Bash(head *)",
+        "Bash(tail *)",
+        "Bash(wc *)",
+        "Bash(which *)",
+        "Bash(echo *)",
+        "Bash(printf *)",
+        "Bash(tree *)",
+        "Bash(find *)",
+        "Bash(grep *)",
+        "Bash(diff *)",
+        "Bash(sort *)",
+        "Bash(uniq *)",
+        "Bash(test *)",
+        "Bash(file *)",
+        "Bash(basename *)",
+        "Bash(dirname *)",
+        "Bash(xargs *)",
+        "Bash(env)",
+        "Bash(pwd)",
+
+        "Bash(mkdir *)",
+        "Bash(touch *)",
+        "Bash(cp *)",
+        "Bash(mv *)",
+        "Bash(chmod *)",
+
+        "Bash(curl *)",
+        "Bash(jq *)",
+        "Bash(brew *)",
+
+        "Bash(clickup *)"
+      ]
+    }
+  },
+  "workspace": {
+    "_comment": "Installed into <workspace>/.claude/settings.local.json — applies when Claude is launched from the workspace root.",
+    "permissions": {
+      "allow": [
+        "Bash(git *)",
+        "Bash(gh *)",
+
+        "Bash(docker *)",
+        "Bash(docker-compose *)",
+        "Bash(docker compose *)",
+        "Bash(./env.sh *)",
+        "Bash(./env.sh)",
+
+        "Bash(npm *)",
+        "Bash(npx *)",
+        "Bash(node *)",
+        "Bash(pnpm *)",
+        "Bash(yarn *)",
+
+        "Bash(python *)",
+        "Bash(python3 *)",
+        "Bash(pip *)",
+        "Bash(pip3 *)",
+        "Bash(pyenv *)",
+        "Bash(pytest *)",
+        "Bash(* manage.py *)",
+
+        "Bash(source *)",
+        "Bash(eval *)",
+        "Bash(export *)",
+        "Bash(cd *)",
+
+        "Bash(ls *)",
+        "Bash(cat *)",
+        "Bash(head *)",
+        "Bash(tail *)",
+        "Bash(wc *)",
+        "Bash(which *)",
+        "Bash(echo *)",
+        "Bash(printf *)",
+        "Bash(tree *)",
+        "Bash(find *)",
+        "Bash(grep *)",
+        "Bash(diff *)",
+        "Bash(sort *)",
+        "Bash(uniq *)",
+        "Bash(test *)",
+        "Bash(file *)",
+        "Bash(basename *)",
+        "Bash(dirname *)",
+        "Bash(xargs *)",
+        "Bash(env)",
+        "Bash(pwd)",
+
+        "Bash(mkdir *)",
+        "Bash(touch *)",
+        "Bash(cp *)",
+        "Bash(mv *)",
+        "Bash(chmod *)",
+
+        "Bash(curl *)",
+        "Bash(jq *)",
+
+        "Bash(clickup *)",
+
+        "Bash(pnpm build *)",
+        "Bash(pnpm dev *)",
+        "Bash(pnpm lint *)",
+        "Bash(pnpm test *)",
+        "Bash(pnpm install *)",
+        "Bash(pnpm build)",
+        "Bash(pnpm dev)",
+        "Bash(pnpm lint)",
+        "Bash(pnpm test)",
+        "Bash(pnpm install)",
+
+        "Bash(aws sts get-caller-identity)",
+        "Bash(aws amplify list-apps *)",
+        "Bash(aws amplify list-jobs *)",
+
+        "mcp__claude_ai_ClickUp__clickup_get_workspace_hierarchy",
+        "mcp__claude_ai_ClickUp__clickup_search",
+        "mcp__claude_ai_ClickUp__clickup_get_task",
+        "mcp__claude_ai_ClickUp__clickup_get_list",
+        "mcp__claude_ai_ClickUp__clickup_create_task",
+        "mcp__claude_ai_ClickUp__clickup_update_task",
+        "mcp__claude_ai_ClickUp__clickup_create_task_comment",
+        "mcp__claude_ai_ClickUp__clickup_find_member_by_name",
+        "mcp__claude_ai_ClickUp__clickup_get_workspace_members"
+      ]
+    }
+  }
+}
