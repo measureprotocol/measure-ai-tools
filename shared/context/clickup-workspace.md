@@ -49,12 +49,25 @@ Tasks tagged `claude` are queued for Claude to work on autonomously:
 
 ## CLI usage
 
-The `clickup` CLI (installed by `setup.sh`) is used in slash commands:
+The `clickup` CLI (installed by `setup.sh`) is available for task management:
 
 ```bash
-clickup get <task-id>
-clickup status <task-id> "in progress"
-clickup comment <task-id> "Branch feature_foo created."
+clickup get <task-id>                     # Print task name, status, assignees, URL
+clickup status <task-id> "in progress"    # Update task status
+clickup comment <task-id> "message"       # Add a comment to a task
+clickup assign <task-id> <username>       # Assign task to a workspace member
+clickup unassign <task-id> <username>     # Remove assignee from a task
+clickup search [options] [text...]        # Search tasks in workspace
 ```
 
-See `tools/clickup/README.md` for full reference.
+### Search examples
+
+```bash
+clickup search --folder Studio bug        # Find tasks with "bug" in name, in Studio folder
+clickup search --status "in progress"      # All in-progress tasks
+clickup search --tag claude                # Tasks tagged for Claude
+clickup search --assignee john             # Tasks assigned to john
+clickup search --folder Studio --closed    # Include done/closed tasks
+```
+
+Search filters: `--space`, `--folder`, `--list`, `--status`, `--tag`, `--assignee`, `--closed`. Free text matches against task names. All filters are partial match and case-insensitive.
