@@ -235,22 +235,11 @@ echo "    - <workspace>/.claude/settings.local.json  (pre-approved permissions)"
 echo "    - <workspace>/CLAUDE.md  (workspace context for Claude)"
 echo ""
 
-# Try to detect workspace directory
-DEFAULT_WORKSPACE=""
-if [ -d "$HOME/Projects/measure-docker" ]; then
-    DEFAULT_WORKSPACE="$HOME/Projects"
-elif [ -d "$HOME/projects/measure-docker" ]; then
-    DEFAULT_WORKSPACE="$HOME/projects"
-elif [ -d "$HOME/measure/measure-docker" ]; then
-    DEFAULT_WORKSPACE="$HOME/measure"
-fi
+# Detect workspace directory (parent of this repo)
+DEFAULT_WORKSPACE="$(cd "$REPO_DIR/.." && pwd)"
 
-if [ -n "$DEFAULT_WORKSPACE" ]; then
-    read -r -p "  Workspace directory [$DEFAULT_WORKSPACE]: " WORKSPACE_DIR
-    WORKSPACE_DIR="${WORKSPACE_DIR:-$DEFAULT_WORKSPACE}"
-else
-    read -r -p "  Workspace directory (e.g. ~/Projects): " WORKSPACE_DIR
-fi
+read -r -p "  Workspace directory [$DEFAULT_WORKSPACE]: " WORKSPACE_DIR
+WORKSPACE_DIR="${WORKSPACE_DIR:-$DEFAULT_WORKSPACE}"
 
 # Expand ~ if present
 WORKSPACE_DIR="${WORKSPACE_DIR/#\~/$HOME}"
