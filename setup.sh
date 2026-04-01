@@ -98,9 +98,9 @@ done
 header "2. ClickUp CLI"
 
 mkdir -p "$LOCAL_BIN"
-cp "$REPO_DIR/tools/clickup/clickup.py" "$LOCAL_BIN/clickup"
+ln -sf "$REPO_DIR/tools/clickup/clickup.py" "$LOCAL_BIN/clickup"
 chmod +x "$LOCAL_BIN/clickup"
-success "ClickUp CLI installed to $LOCAL_BIN/clickup"
+success "ClickUp CLI symlinked to $LOCAL_BIN/clickup"
 
 if ! echo "$PATH" | grep -q "$LOCAL_BIN"; then
     warn "$LOCAL_BIN is not in your PATH."
@@ -269,7 +269,7 @@ else
 
     if [ ! -f "$WORKSPACE_CLAUDE_MD" ]; then
         if [ -f "$WORKSPACE_TEMPLATE" ]; then
-            cp "$WORKSPACE_TEMPLATE" "$WORKSPACE_CLAUDE_MD"
+            sed "s|~/measure-ai-tools|$REPO_DIR|g" "$WORKSPACE_TEMPLATE" > "$WORKSPACE_CLAUDE_MD"
             success "Created $WORKSPACE_CLAUDE_MD from template"
             warn "Open it and customize the repo table for your setup."
         fi
@@ -322,7 +322,7 @@ GLOBAL_CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
 
 if [ ! -f "$GLOBAL_CLAUDE_MD" ]; then
     cat > "$GLOBAL_CLAUDE_MD" <<TEMPLATE
-@~/measure-ai-tools/shared/claude-md-global.md
+@$REPO_DIR/shared/claude-md-global.md
 
 ## About me
 
