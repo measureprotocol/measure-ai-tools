@@ -51,10 +51,31 @@ for role in "${ROLES[@]}"; do
     fi
 done
 
+WORKSPACE_NAME="$(basename "$(cd "$REPO_DIR/.." && pwd)")"
+
 echo ""
 echo -e "${BOLD}measure-ai-tools setup${NC}"
 echo "Roles: ${ROLES[*]}"
 echo "Repo:  $REPO_DIR"
+echo ""
+echo "This setup expects the following directory structure:"
+echo ""
+echo "  $WORKSPACE_NAME/              ← your workspace root"
+echo "  ├── measure-ai-tools/         ← this repo (setup runs from here)"
+echo "  ├── measure-backend/          ← other Measure repos as siblings"
+echo "  ├── measure-predict/"
+echo "  ├── measure-sampler/"
+echo "  └── .../"
+echo ""
+echo "Claude Code should be launched from the workspace root ($WORKSPACE_NAME/)."
+echo ""
+read -r -p "Does this look right? [Y/n] " CONFIRM
+echo ""
+
+if [[ "$CONFIRM" =~ ^[Nn] ]]; then
+    echo "Setup cancelled. Please re-arrange your directories and try again."
+    exit 0
+fi
 
 # --- 1. Slash commands ---
 
