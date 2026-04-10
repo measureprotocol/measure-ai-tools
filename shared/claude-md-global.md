@@ -10,6 +10,35 @@
 
 ---
 
+## Linked project groups
+
+Some repos form tightly coupled product groups. When working in any repo within a group, be aware that related work may span the other repos — proactively check them when searching for connections, debugging, or planning features.
+
+### Predict (behavioral intelligence platform)
+
+| Repo | Role |
+|---|---|
+| `measure-predict` | Next.js frontend — chat UI, explorer, library, artifact viewer |
+| `measure-agent` | Python backend — agent loop, tools, briefs, kits, Celery workers |
+| `LBM` | Large Behavioral Model — analytics engine, embeddings, journey data |
+| `measure-backend` | Core API — provides data that feeds into Predict via agent tools |
+
+These repos are all part of the same product. A feature often touches the frontend, the agent backend, and sometimes the LBM or core API. When someone mentions "Predict" work, consider all of these repos. When searching for how something works end-to-end, check across the group.
+
+### Studio (internal tools frontend)
+
+| Repo | Role |
+|---|---|
+| `measure-studio` | Unified Next.js frontend for internal tools and workflows |
+| `measure-requester` | Django backend — survey requester workflows and multi-database routing |
+| `measure-workshop` | Django backend — job engine, pipeline processing (Retro system) |
+| `measure-sampler` | Django backend — survey sampling and partner integrations |
+| `measure-contributor-web` | Django backend — contributor participation flows |
+
+Studio is the new unified frontend for these backend systems. When someone mentions "Studio" work, they could be talking about any of these backends. When debugging a Studio feature, trace through to the relevant backend.
+
+---
+
 ## Team conventions
 
 ### Git workflow

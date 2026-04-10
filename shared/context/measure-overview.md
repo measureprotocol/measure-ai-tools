@@ -138,6 +138,28 @@ Each Django service has a `settings/docker.py` that configures these Docker-inte
 
 Engineers typically work from a single parent directory (e.g. `~/Projects/`) with all repos checked out as siblings. This allows Claude Code to read across repos when working on cross-service changes. The `measure-docker` directory sits alongside the service repos and mounts their source code via Docker volumes.
 
+## Deployment environments
+
+Deployments are managed via Fabric from the `measure-admin/deploy/` directory.
+
+| Environment | Fabric flag | Notes |
+|---|---|---|
+| `dev2` | `-R dev2` | Active development/testing environment |
+| `prod` | `-R prod` | Production |
+
+**`dev` is deprecated — always use `dev2`.**
+
+Deploy commands follow this pattern:
+```bash
+fab -R dev2 update_<service>:branch=<branch>
+```
+
+Options:
+- `mode=app` — restart web app only (Apache/Gunicorn)
+- `mode=hawkeye` — restart workers/beat only
+- `migrate=True/False` — run database migrations (default: True)
+- `restart=True/False` — restart services (default: True)
+
 ## Development conventions
 
 - Django migrations should always have descriptive names, not auto-generated ones
